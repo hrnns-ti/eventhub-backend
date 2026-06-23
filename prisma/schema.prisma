@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Enum untuk Role dan Status Pembayaran
+enum Role {
+  SUPERADMIN
+  ORGANIZER
+  PARTICIPANT
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  full_name     String
+  email         String   @unique
+  password_hash String
+  role          Role     @default(PARTICIPANT)
+  skills        Json?    // Optional JSONB untuk skill
+
+  // Relasi
+  organized_events Event[]       @relation("EventOrganizer")
+  transactions     Transaction[]
+  tickets          Ticket[]
+  led_teams        Team[]        @relation("TeamLeader")
+  team_memberships TeamMember[]
+  
+  @@map("users") // Mengubah nama tabel di database menjadi lowercase/plural (Best Practice SQL)
+}
+
+model Event {
+  id                    String   @id @default(uuid()) @db.Uuid
+  title                 String
+  description           String
+  organizer_id          String   @db.Uuid
+  quota                 Int
+  price                 Decimal  @db.Decimal(10, 2)
+  registration_deadline DateTime
+
+  // Relasi
+  organizer    User          @relation("EventOrganizer", fields: [organizer_id], references: [id])
+  transactions Transaction[]
+  tickets      Ticket[]
+  teams        Team[]
+
+  @@map("events")
+}
+
+model Transaction {
+  id                   String        @id @default(uuid()) @db.Uuid // Berfungsi sebagai order_id
+  user_id              String        @db.Uuid
+  event_id             String        @db.Uuid
+  amount               Decimal       @db.Decimal(10, 2) // Snapshot harga
+  payment_status       PaymentStatus @default(PENDING)
+  payment_url          String?
+  gateway_trx_id       String?
+  payment_method       String?
+  raw_gateway_response Json?         // Log mentah webhook
+  created_at           DateTime      @default(now())
+
+  // Relasi
+  user   User    @relation(fields: [user_id], references: [id])
+  event  Event   @relation(fields: [event_id], references: [id])
+  ticket Ticket? // Relasi 1-to-1 opsional (Tiket terbit jika status PAID)
+
+  @@map("transactions")
+}
+
+model Ticket {
+  id             String   @id @default(uuid()) @db.Uuid
+  user_id        String   @db.Uuid
+  event_id       String   @db.Uuid
+  transaction_id String   @unique @db.Uuid // Unique agar 1 transaksi = 1 tiket
+  ticket_code    String   @unique
+  issued_at      DateTime @default(now())
+
+  // Relasi
+  user        User        @relation(fields: [user_id], references: [id])
+  event       Event       @relation(fields: [event_id], references: [id])
+  transaction Transaction @relation(fields: [transaction_id], references: [id])
+
+  @@map("tickets")
+}
+
+model Team {
+  id                     String  @id @default(uuid()) @db.Uuid
+  event_id               String  @db.Uuid
+  team_name              String
+  leader_id              String  @db.Uuid
+  is_looking_for_members Boolean @default(false)
+
+  // Relasi
+  event   Event        @relation(fields: [event_id], references: [id])
+  leader  User         @relation("TeamLeader", fields: [leader_id], references: [id])
+  members TeamMember[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  team_id String @db.Uuid
+  user_id String @db.Uuid
+
+  // Relasi
+  team Team @relation(fields: [team_id], references: [id])
+  user User @relation(fields: [user_id], references: [id])
+
+  @@id([team_id, user_id]) // Composite Primary Key
+  @@map("team_members")
+}
