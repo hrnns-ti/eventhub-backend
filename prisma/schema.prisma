@@ -4,9 +4,10 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-// Enum untuk Role dan Status Pembayaran
+// ================= ENUMS =================
 enum Role {
   SUPERADMIN
   ORGANIZER
@@ -20,35 +21,37 @@ enum PaymentStatus {
   CANCELLED
 }
 
+// ================= MODELS =================
 model User {
-  id            String   @id @default(uuid()) @db.Uuid
+  // @db.Uuid memaksa PostgreSQL menggunakan tipe data native UUID, bukan sekadar TEXT
+  id            String  @id @default(uuid()) @db.Uuid
   full_name     String
-  email         String   @unique
+  email         String  @unique // Ditambahkan @unique karena email wajib tunggal untuk login
   password_hash String
-  role          Role     @default(PARTICIPANT)
-  skills        Json?    // Optional JSONB untuk skill
+  role          Role    @default(PARTICIPANT)
+  skills        Json?   @db.JsonB // Memaksa format JSONB sesuai desainmu
 
   // Relasi
-  organized_events Event[]       @relation("EventOrganizer")
+  events_organized Event[]
   transactions     Transaction[]
   tickets          Ticket[]
-  led_teams        Team[]        @relation("TeamLeader")
+  teams_led        Team[]
   team_memberships TeamMember[]
-  
-  @@map("users") // Mengubah nama tabel di database menjadi lowercase/plural (Best Practice SQL)
+
+  @@map("users")
 }
 
 model Event {
   id                    String   @id @default(uuid()) @db.Uuid
   title                 String
-  description           String
+  description           String   @db.Text // Memaksa tipe Text tanpa batas karakter
   organizer_id          String   @db.Uuid
   quota                 Int
-  price                 Decimal  @db.Decimal(10, 2)
-  registration_deadline DateTime
+  price                 Decimal  @db.Decimal
+  registration_deadline DateTime @db.Timestamp()
 
   // Relasi
-  organizer    User          @relation("EventOrganizer", fields: [organizer_id], references: [id])
+  organizer    User          @relation(fields: [organizer_id], references: [id])
   transactions Transaction[]
   tickets      Ticket[]
   teams        Team[]
@@ -57,21 +60,24 @@ model Event {
 }
 
 model Transaction {
-  id                   String        @id @default(uuid()) @db.Uuid // Berfungsi sebagai order_id
+  id                   String        @id @default(uuid()) @db.Uuid
   user_id              String        @db.Uuid
   event_id             String        @db.Uuid
-  amount               Decimal       @db.Decimal(10, 2) // Snapshot harga
+  amount               Decimal       @db.Decimal
   payment_status       PaymentStatus @default(PENDING)
-  payment_url          String?
-  gateway_trx_id       String?
-  payment_method       String?
-  raw_gateway_response Json?         // Log mentah webhook
-  created_at           DateTime      @default(now())
+  
+  // Kolom-kolom ini saya buat optional (?) karena saat record pertama kali 
+  // dibuat (status PENDING), data dari Midtrans/Xendit mungkin belum turun
+  payment_url          String?       
+  gateway_trx_id       String?       
+  payment_method       String?       
+  raw_gateway_response Json?         @db.JsonB
+  created_at           DateTime      @default(now()) @db.Timestamp()
 
   // Relasi
   user   User    @relation(fields: [user_id], references: [id])
   event  Event   @relation(fields: [event_id], references: [id])
-  ticket Ticket? // Relasi 1-to-1 opsional (Tiket terbit jika status PAID)
+  ticket Ticket? // Relasi 1-to-0..1 (hanya jika Paid)
 
   @@map("transactions")
 }
@@ -80,9 +86,9 @@ model Ticket {
   id             String   @id @default(uuid()) @db.Uuid
   user_id        String   @db.Uuid
   event_id       String   @db.Uuid
-  transaction_id String   @unique @db.Uuid // Unique agar 1 transaksi = 1 tiket
-  ticket_code    String   @unique
-  issued_at      DateTime @default(now())
+  transaction_id String   @unique @db.Uuid
+  ticket_code    String   @unique // Wajib unik untuk generate QR Code
+  issued_at      DateTime @default(now()) @db.Timestamp()
 
   // Relasi
   user        User        @relation(fields: [user_id], references: [id])
@@ -101,7 +107,7 @@ model Team {
 
   // Relasi
   event   Event        @relation(fields: [event_id], references: [id])
-  leader  User         @relation("TeamLeader", fields: [leader_id], references: [id])
+  leader  User         @relation(fields: [leader_id], references: [id])
   members TeamMember[]
 
   @@map("teams")
@@ -115,6 +121,6 @@ model TeamMember {
   team Team @relation(fields: [team_id], references: [id])
   user User @relation(fields: [user_id], references: [id])
 
-  @@id([team_id, user_id]) // Composite Primary Key
+  @@id([team_id, user_id]) // Composite Primary Key dari 2 UUID
   @@map("team_members")
 }

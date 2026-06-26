@@ -1,8 +1,17 @@
+/*
+  Warnings:
+
+  - You are about to drop the `User` table. If the table is not empty, all the data it contains will be lost.
+
+*/
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('SUPERADMIN', 'ORGANIZER', 'PARTICIPANT');
 
 -- CreateEnum
 CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'PAID', 'EXPIRED', 'CANCELLED');
+
+-- DropTable
+DROP TABLE "User";
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -23,8 +32,8 @@ CREATE TABLE "events" (
     "description" TEXT NOT NULL,
     "organizer_id" UUID NOT NULL,
     "quota" INTEGER NOT NULL,
-    "price" DECIMAL(10,2) NOT NULL,
-    "registration_deadline" TIMESTAMP(3) NOT NULL,
+    "price" DECIMAL NOT NULL,
+    "registration_deadline" TIMESTAMP NOT NULL,
 
     CONSTRAINT "events_pkey" PRIMARY KEY ("id")
 );
@@ -34,13 +43,13 @@ CREATE TABLE "transactions" (
     "id" UUID NOT NULL,
     "user_id" UUID NOT NULL,
     "event_id" UUID NOT NULL,
-    "amount" DECIMAL(10,2) NOT NULL,
+    "amount" DECIMAL NOT NULL,
     "payment_status" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
     "payment_url" TEXT,
     "gateway_trx_id" TEXT,
     "payment_method" TEXT,
     "raw_gateway_response" JSONB,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "transactions_pkey" PRIMARY KEY ("id")
 );
@@ -52,7 +61,7 @@ CREATE TABLE "tickets" (
     "event_id" UUID NOT NULL,
     "transaction_id" UUID NOT NULL,
     "ticket_code" TEXT NOT NULL,
-    "issued_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "issued_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "tickets_pkey" PRIMARY KEY ("id")
 );
