@@ -26,6 +26,20 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+
+// Endpoint Event
+app.get('/api/event', async (req, res) => {
+  try{
+
+  } catch (error) {
+    res.status(501).json({
+      status: 'error',
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
