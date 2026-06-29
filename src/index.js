@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import prisma from './config/prisma.js';
+import userRoutes from './routes/user.routes.js'; 
 
 dotenv.config();
 
@@ -15,7 +16,7 @@ app.get('/api/health', async (req, res) => {
     await prisma.$queryRaw`SELECT 1`;
     res.status(200).json({
       status: 'success',
-      message: 'EventHub API is running perfectly',
+      message: 'EventHub API is running perfectly on ES Modules!',
     });
   } catch (error) {
     res.status(500).json({
@@ -26,19 +27,7 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-
-// Endpoint Event
-app.get('/api/event', async (req, res) => {
-  try{
-
-  } catch (error) {
-    res.status(501).json({
-      status: 'error',
-      message: 'Internal server error',
-      error: error.message
-    });
-  }
-});
+app.use('/api/users', userRoutes); 
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
