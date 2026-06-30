@@ -1,7 +1,10 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import prisma from './config/prisma.js';
-import userRoutes from './routes/user.routes.js'; 
+
+import userRoutes from './routes/user.routes.js';
+import eventRoutes from './routes/event.routes.js'; 
+import transactionRoutes from './routes/transaction.routes.js';
 
 dotenv.config();
 
@@ -27,7 +30,9 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-app.use('/api/users', userRoutes); 
+app.use('/api/users', userRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
