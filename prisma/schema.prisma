@@ -14,6 +14,21 @@ enum Role {
   PARTICIPANT
 }
 
+enum EventType {
+  COMPETITION
+  WORKSHOP
+  WEBINAR
+  SEMINAR
+  TALKSHOW
+  CONFERENCE
+  BOOTCAMP
+  EXPO
+  FESTIVAL
+  CHARITY
+  OTHER
+}
+
+
 enum PaymentStatus {
   PENDING
   PAID
@@ -36,7 +51,7 @@ model User {
   bio           String? @db.Text // Deskripsi singkat diri
   github_link   String? // Sangat relevan untuk portofolio Hackathon
   linkedin_link String?
-  
+
 
   // Relasi
   events_organized Event[]
@@ -56,6 +71,7 @@ model Event {
   quota                 Int
   price                 Decimal  @db.Decimal
   registration_deadline DateTime @db.Timestamp()
+  event_type            EventType @default(OTHER)
 
   // Relasi
   organizer    User          @relation(fields: [organizer_id], references: [id])
