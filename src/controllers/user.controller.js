@@ -113,3 +113,127 @@ export const loginUser = async (req, res) => {
     });
   }
 };
+
+export const getMyProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        full_name: true,
+        email: true,
+        role: true,
+        phone_number: true,
+        institution: true,
+        bio: true,
+        github_link: true,
+        linkedin_link: true,
+        skills: true,
+        avatar_url: true,
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User tidak ditemukan' });
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      data: user,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 'error',
+      message: 'Gagal mengambil profil',
+      error: error.message,
+    });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { phone_number, institution, bio, github_link, linkedin_link, skills } = req.body;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        phone_number,
+        institution,
+        bio,
+        github_link,
+        linkedin_link,
+        skills,
+      },
+      select: {
+        id: true,
+        full_name: true,
+        email: true,
+        phone_number: true,
+        institution: true,
+        bio: true,
+        skills: true,
+      }
+    });
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Profil berhasil diperbarui!',
+      data: updatedUser,
+    });
+  } catch (error) {
+    // Prisma Error P2002 = Unique Constraint Violation
+    if (error.code === 'P2002' && error.meta?.target?.includes('phone_number')) {
+      return res.status(409).json({
+        status: 'error',
+        message: 'Nomor telepon ini sudah digunakan oleh akun lain.',
+      });
+    }
+
+    return res.status(500).json({
+      status: 'error',
+      message: 'Gagal memperbarui profil',
+      error: error.message,
+    });
+  }
+};
+
+export const getUserProfileById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        full_name: true,
+        institution: true,
+        bio: true,
+        github_link: true,
+        linkedin_link: true,
+        skills: true,
+        avatar_url: true,
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User tidak ditemukan',
+      });
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      data: user,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 'error',
+      message: 'Gagal mengambil profil user',
+      error: error.message,
+    });
+  }
+};
