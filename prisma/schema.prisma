@@ -30,6 +30,13 @@ model User {
   password_hash String
   role          Role    @default(PARTICIPANT)
   skills        Json?   @db.JsonB // Memaksa format JSONB sesuai desainmu
+  avatar_url    String? // Untuk foto profil
+  phone_number  String? @unique // Penting untuk notifikasi tiket via WhatsApp
+  institution   String? // Asal Kampus / Sekolah / Perusahaan
+  bio           String? @db.Text // Deskripsi singkat diri
+  github_link   String? // Sangat relevan untuk portofolio Hackathon
+  linkedin_link String?
+  
 
   // Relasi
   events_organized Event[]

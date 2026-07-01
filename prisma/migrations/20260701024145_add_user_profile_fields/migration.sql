@@ -1,17 +1,8 @@
-/*
-  Warnings:
-
-  - You are about to drop the `User` table. If the table is not empty, all the data it contains will be lost.
-
-*/
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('SUPERADMIN', 'ORGANIZER', 'PARTICIPANT');
 
 -- CreateEnum
 CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'PAID', 'EXPIRED', 'CANCELLED');
-
--- DropTable
-DROP TABLE "User";
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -21,6 +12,12 @@ CREATE TABLE "users" (
     "password_hash" TEXT NOT NULL,
     "role" "Role" NOT NULL DEFAULT 'PARTICIPANT',
     "skills" JSONB,
+    "avatar_url" TEXT,
+    "phone_number" TEXT,
+    "institution" TEXT,
+    "bio" TEXT,
+    "github_link" TEXT,
+    "linkedin_link" TEXT,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
@@ -87,6 +84,9 @@ CREATE TABLE "team_members" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_phone_number_key" ON "users"("phone_number");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "tickets_transaction_id_key" ON "tickets"("transaction_id");
