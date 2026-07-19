@@ -1,0 +1,16 @@
+services:
+  postgres-db:
+    image: postgres:18-alpine
+    container_name: eventhub-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: eventhub-project
+      POSTGRES_DB: eventhub_sync_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - eventhub-pg-18-data:/var/lib/postgresql
+
+volumes:
+  eventhub-pg-18-data:
